@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Sony Bravia RC API
 
@@ -385,3 +387,14 @@ class BraviaRC:
     def media_previous_track(self):
         """Send the previous track command."""
         self.send_req_ircc(self.get_command_code('Prev'))
+
+
+if __name__ == "__main__":
+    TV_IP_ADDRESS = "192.168.1.100"
+    TV_MAC_ADDRESS = "00:11:22:33:44:55"
+    TV_PSK = "sony"
+
+    tv = BraviaRC(TV_IP_ADDRESS, mac=TV_MAC_ADDRESS, psk=TV_PSK)
+
+    print("Connected: {} {}".format(tv.is_connected(), "(using {})".format("PSK" if tv._psk else "PIN")))
+    print("State: {}".format(tv.get_power_status()))
