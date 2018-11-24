@@ -240,7 +240,7 @@ class BraviaRC:
 
     def get_power_status(self):
         """Get power status: off, active, standby"""
-        return_value = 'off' # by default the TV is turned off
+        return_value = 'off'  # by default the TV is turned off
         try:
             resp = self.bravia_req_json("sony/system", self._jdata_build("getPowerStatus", None), False)
             if resp is not None and not resp.get('error'):
