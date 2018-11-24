@@ -308,29 +308,14 @@ class BraviaRC:
 
     def load_app_list(self, log_errors=True):
         """Get the list of installed apps"""
-        parsed_objects = {}
-
-        try:
-            response = requests.get('http://' + self._host + '/DIAL/sony/applist',
-                                     headers=self._get_auth_headers(),
-                                     cookies=self._cookies,
-                                     timeout=TIMEOUT)
-        except requests.exceptions.HTTPError as exception_instance:
-            if log_errors:
-                _LOGGER.error("HTTPError: " + str(exception_instance))
-
-        except Exception as exception_instance:  # pylint: disable=broad-except
-            if log_errors:
-                _LOGGER.error("Exception: " + str(exception_instance))
+        resp = self.bravia_req_json("sony/appControl", self._jdata_build("getApplicationList", None))
+        if resp is not None and not resp.get('error'):
+            results = resp.get('result')[0]
+            apps = {app_item['title']: app_item['uri'] for app_item in results}  # parse apps title:uri from results
+            return {app: apps[app] for app in sorted(apps.keys())}  # return sorted by keys
         else:
-            content = response.content
-            from xml.dom import minidom
-            parsed_xml = minidom.parseString(content)
-            for obj in parsed_xml.getElementsByTagName("app"):
-                if obj.getElementsByTagName("name")[0].firstChild and obj.getElementsByTagName("id")[0].firstChild:
-                    parsed_objects[str(obj.getElementsByTagName("name")[0].firstChild.nodeValue)] = str(obj.getElementsByTagName("id")[0].firstChild.nodeValue)
-
-        return parsed_objects
+            if resp and log_errors:
+                _LOGGER.error("{}".format(resp.get('error')[1]))
 
     def start_app(self, app_name, log_errors=True):
         """Start an app by name"""
