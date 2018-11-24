@@ -277,6 +277,30 @@ class BraviaRC:
             _LOGGER.error("JSON request error:" + json.dumps(resp, indent=4))
         return None
 
+    def get_system_info(self):
+        """Get info on TV."""
+        return_value = {}
+        resp = self.bravia_req_json("sony/system", self._jdata_build("getSystemInformation", None))
+        if resp is not None and not resp.get('error'):
+            #print('=>', resp, '<=')
+            system_content_data = resp.get('result')[0]
+            return_value['name'] = system_content_data.get('name')
+            return_value['model'] = system_content_data.get('model')
+            return_value['language'] = system_content_data.get('language')
+        return return_value
+
+    def get_network_info(self, netif="eth0"):
+        """Get info on network."""
+        return_value = {}
+        resp = self.bravia_req_json("sony/system", self._jdata_build("getNetworkSettings", {"netif": netif}))
+        if resp is not None and not resp.get('error'):
+            #print('=>', resp, '<=')
+            network_content_data = resp.get('result')[0]
+            return_value['mac'] = network_content_data[0]['hwAddr']
+            return_value['ip'] = network_content_data[0]['ipAddrV4']
+            return_value['gateway'] = network_content_data[0]['gateway']
+        return return_value
+
     def set_volume_level(self, volume):
         """Set volume level, range 0..1."""
         self.bravia_req_json("sony/audio", self._jdata_build("setAudioVolume", {"target": "speaker",
