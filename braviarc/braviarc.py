@@ -317,30 +317,12 @@ class BraviaRC:
             if resp and log_errors:
                 _LOGGER.error("{}".format(resp.get('error')[1]))
 
-    def start_app(self, app_name, log_errors=True):
+    def start_app(self, app_name, log_errors=True, terminate_apps=False):
         """Start an app by name"""
         if len(self._app_list) == 0:
             self._app_list = self.load_app_list(log_errors=log_errors)
         if app_name in self._app_list:
-            return self._start_app(self._app_list[app_name], log_errors=log_errors)
-
-    def _start_app(self, app_id, log_errors=True):
-        """Start an app by id"""
-        try:
-            response = requests.post('http://' + self._host + '/DIAL/apps/' + app_id,
-                                     headers=self._get_auth_headers(),
-                                     cookies=self._cookies,
-                                     timeout=TIMEOUT)
-        except requests.exceptions.HTTPError as exception_instance:
-            if log_errors:
-                _LOGGER.error("HTTPError: " + str(exception_instance))
-
-        except Exception as exception_instance:  # pylint: disable=broad-except
-            if log_errors:
-                _LOGGER.error("Exception: " + str(exception_instance))
-        else:
-            content = response.content
-            return content
+            return self.play_content(self._app_list[app_name], terminate_apps=terminate_apps)
 
     def turn_on(self):
         """Turn the media player on."""
@@ -373,9 +355,21 @@ class BraviaRC:
             uri = self._content_mapping[source]
             self.play_content(uri)
 
-    def play_content(self, uri):
-        """Play content by URI."""
-        self.bravia_req_json("sony/avContent", self._jdata_build("setPlayContent", {"uri": uri}))
+    def play_content(self, uri, terminate_apps=False):
+        """Play content (including apps) by URI."""
+        if terminate_apps:
+            self.bravia_req_json("sony/appControl", self._jdata_build("terminateApps", None))
+
+        if uri.startswith("com.sony.dtv"):  # apps have known uri prefix
+            resp = self.bravia_req_json("sony/appControl", self._jdata_build("setActiveApp", {"uri": uri}))
+        else:
+            resp = self.bravia_req_json("sony/avContent", self._jdata_build("setPlayContent", {"uri": uri}))
+
+        if resp is None or resp.get('error'):
+            if resp:
+                _LOGGER.error("{}".format(resp.get('error')[1]))
+            return False
+        return True
 
     def media_play(self):
         """Send play command."""
