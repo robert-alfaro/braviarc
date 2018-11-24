@@ -28,7 +28,7 @@ class BraviaRC:
 
         self._host = host
         self._mac = mac
-        self._cookies = None
+        self._cookies = None if psk is None else requests.cookies.RequestsCookieJar()
         self._psk = psk
         self._commands = []
         self._content_mapping = []
@@ -45,10 +45,6 @@ class BraviaRC:
         if self._psk:
             return {"X-Auth-PSK": self._psk}
         return {}
-
-    def connected(self, psk):
-        self._psk = psk
-        self._cookies = requests.cookies.RequestsCookieJar()
 
     def connect(self, pin, clientid, nickname):
         """Connect to TV and get authentication cookie.
